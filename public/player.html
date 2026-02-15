@@ -1,14 +1,54 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <title>Voting – Spieler</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>Player Voting</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .topBar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .heartDisplay {
+            font-size: 22px;
+            letter-spacing: 3px;
+        }
+
+        .playerGrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .playerCard {
+            background: #151515;
+            padding: 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .playerCard:hover {
+            background: #1f1f1f;
+            transform: translateY(-2px);
+        }
+
+        .playerCard.voted {
+            background: #2a2a2a;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div id="top" class="topbar"></div>
-        <h1 id="title">Lade...</h1>
+    <div class="card" style="max-width: 500px; margin: 60px auto;">
+        <div id="top" class="topBar"></div>
+        <h1 id="title" style="text-align:center;">Wer bist du?</h1>
         <div id="playerArea"></div>
     </div>
 
@@ -16,27 +56,30 @@
     <script>
         const socket = io();
 
-        let myName = localStorage.getItem("myName");
         let myVote = null;
-        let myHearts = 3;
+        let myName = localStorage.getItem("myName");
         let currentPlayers = [];
+        let myHearts = 3;
 
-        // WICHTIG: Wenn wir schon einen Namen haben → sofort beim Server anmelden
         socket.on("connect", () => {
             if (myName) {
                 socket.emit("identify", myName);
             }
+            socket.emit("requestPlayerList");
         });
 
-        socket.on("playersUpdate", (list) => {
-            currentPlayers = list;
+        socket.on("playerList", (players) => {
+            currentPlayers = players;
             render();
         });
 
-        socket.on("voteUpdate", (data) => {
-            if (data.yourVote !== undefined) {
-                myVote = data.yourVote;
-            }
+        socket.on("yourVote", (player) => {
+            myVote = player;
+            render();
+        });
+
+        socket.on("resetVotes", () => {
+            myVote = null;
             render();
         });
 
@@ -115,15 +158,12 @@
                     card.textContent = "Dein Vote:\n/" + player;
                 } else {
                     card.textContent = "/" + player;
-
-                    if (!myVote) {
-                        card.onclick = () => {
-                            socket.emit("vote", player);
-                        };
-                    } else {
-                        card.classList.add("disabled");
-                    }
                 }
+
+                // IMMER klickbar (Vote kann geändert werden)
+                card.onclick = () => {
+                    socket.emit("vote", player);
+                };
 
                 grid.appendChild(card);
             });
