@@ -1,0 +1,155 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0d0d0d;
+    color: white;
+    padding: 40px;
+}
+
+/* Überschriften */
+h1 {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+h2 {
+    margin-top: 40px;
+    margin-bottom: 15px;
+    font-weight: normal;
+    color: #cccccc;
+}
+
+/* Boxen */
+.card {
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    transition: 0.2s ease;
+}
+
+.card:hover {
+    background: #202020;
+}
+
+/* Eingabefeld */
+input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: none;
+    background: #111;
+    color: white;
+    margin-right: 10px;
+    outline: none;
+}
+
+/* Buttons */
+button {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #2a2a2a;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    background: #3a3a3a;
+    transform: translateY(-1px);
+}
+
+/* Spielerliste */
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+li {
+    background: #151515;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: 0.2s;
+}
+
+li:hover {
+    background: #1f1f1f;
+}
+/* Layout mit zwei Spalten */
+.layout {
+    display: flex;
+    gap: 30px;
+}
+
+/* Linke Seite */
+.leftPanel {
+    width: 400px;
+}
+
+/* Rechte Seite (Fragen) */
+.rightPanel {
+    flex: 1;
+}
+
+/* Fragenfenster */
+.questionBox {
+    background: #111;
+    border-radius: 14px;
+    padding: 20px;
+    height: 80vh;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+.center {
+    text-align: center;
+}
+
+.voteButton {
+    width: 100%;
+    margin-top: 8px;
+    font-size: 16px;
+}
+.layout {
+    display: flex;
+    gap: 20px;
+}
+
+.leftColumn {
+    width: 350px;
+}
+
+.rightColumn {
+    flex: 1;
+}
+
+.scrollBox {
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.resultRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.playerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.admin-btn.active {
+    background: linear-gradient(135deg, #3a3a3a, #1f1f1f);
+    box-shadow: 0 0 0 2px #4da6ff, 0 0 10px rgba(77,166,255,0.6);
+    transform: translateY(1px);
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+
+    <div class="layout">
+        <!-- LINKE SEITE -->
+        <div class="leftPanel">
+
+            <div class="card">
+                <h2>Spieler hinzufügen</h2>
+                <input type="text" id="playerName" placeholder="Spielername eingeben">
+                <button onclick="addPlayer()">Hinzufügen</button>
+            </div>
+
+            <div class="card">
+                <h2>Spielerliste</h2>
+                <ul id="playerList"></ul>
+            </div>
+
+            <div class="card">
+                <h2>Voting-Steuerung</h2>
+                <button id="startVoting" class="admin-btn">Voting starten</button>
+                <button id="stopVoting" class="admin-btn">Voting beenden</button>
+                <button id="revealAll" class="admin-btn">Alle Votes aufdecken</button>
+                <button id="revealNext" class="admin-btn">Nächsten Vote aufdecken</button>
+                <button id="hideVotes" class="admin-btn">Votes verbergen</button>
+
+            </div>
+
+        </div>
+
+        <!-- RECHTE SEITE -->
+        <div class="rightPanel">
+
+            <div class="card">
+                <h2>Fragen</h2>
+                <div id="questions" class="questionBox">
+                    Lade Fragen...
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Voting-Ergebnis</h2>
+                <div id="resultBox"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentVotes = {};
+        let playersCache = [];
+        let detailedResults = {};
+
+        function addPlayer() {
+            const input = document.getElementById("playerName");
+            const name = input.value;
+
+            if (name.trim() === "") return;
+
+            socket.emit("addPlayer", name);
+            input.value = "";
+        }
+
+        function startVoting() {
+            socket.emit("startVoting");
+        }
+
+        function stopVoting() {
+            socket.emit("stopVoting");
+        }
+
+        function revealNextVote() {
+        socket.emit("revealNextVote");
+        }
+
+
+        function revealVotes() {
+            socket.emit("revealVotes");
+        }
+
+        function hideVotes() {
+            socket.emit("hideVotes");
+            document.getElementById("resultBox").innerHTML = "";
+        }
+
+        function renderPlayers(players) {
+            const list = document.getElementById("playerList");
+            list.innerHTML = "";
+
+            const startBtn = document.getElementById("startVoting");
+const stopBtn = document.getElementById("stopVoting");
+const revealAllBtn = document.getElementById("revealAll");
+const revealNextBtn = document.getElementById("revealNext");
+const hideBtn = document.getElementById("hideVotes");
+
+function setActive(button) {
+    document.querySelectorAll(".admin-btn").forEach(b => {
+        b.classList.remove("active");
+    });
+    button.classList.add("active");
+}
+
+startBtn.onclick = () => {
+    socket.emit("startVoting");
+    setActive(startBtn);
+};
+
+stopBtn.onclick = () => {
+    socket.emit("stopVoting");
+    setActive(stopBtn);
+};
+
+revealAllBtn.onclick = () => {
+    socket.emit("revealVotes");
+    setActive(revealAllBtn);
+};
+
+
+revealNextBtn.onclick = () => {
+    socket.emit("revealNextVote");
+    setActive(revealNextBtn);
+};
+
+hideBtn.onclick = () => {
+    socket.emit("hideVotes");
+    setActive(hideBtn);
+};
+
+
+            players.forEach((player) => {
+                const li = document.createElement("li");
+
+                const hasVoted =
+                    detailedResults[player] &&
+                    detailedResults[player].votedFor;
+
+                const status = hasVoted ? "✔" : "✖";
+
+                li.textContent = player + " – " + status + " ";
+
+                // Entfernen-Button
+                const removeBtn = document.createElement("button");
+                removeBtn.textContent = "Entfernen";
+                removeBtn.onclick = () => {
+                    socket.emit("removePlayer", player);
+                };
+
+                // Herz minus
+                const minusBtn = document.createElement("button");
+                minusBtn.textContent = "- Herz";
+                minusBtn.onclick = () => {
+                    socket.emit("changeHearts", { player, amount: -1 });
+                };
+
+                // Herz plus
+                const plusBtn = document.createElement("button");
+                plusBtn.textContent = "+ Herz";
+                plusBtn.onclick = () => {
+                    socket.emit("changeHearts", { player, amount: 1 });
+                };
+
+                li.appendChild(removeBtn);
+                li.appendChild(minusBtn);
+                li.appendChild(plusBtn);
+
+                list.appendChild(li);
+            });
+        }
+
+        function renderResults() {
+            const box = document.getElementById("resultBox");
+            box.innerHTML = "";
+
+            playersCache.forEach((player) => {
+                const data = detailedResults[player];
+                if (!data) return;
+
+                const row = document.createElement("div");
+                row.style.display = "flex";
+                row.style.justifyContent = "space-between";
+                row.style.padding = "6px 0";
+                row.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+
+                row.innerHTML = `
+                    <span>/${player}</span>
+                    <span>→ /${data.votedFor || "-"}</span>
+                    <span>| ${data.votes || 0} Votes</span>
+                `;
+
+                box.appendChild(row);
+            });
+        }
+
+        socket.on("playerList", (players) => {
+            playersCache = players;
+            renderPlayers(players);
+        });
+
+        socket.on("voteResults", (votes) => {
+            currentVotes = votes;
+            renderPlayers(playersCache);
+        });
+
+        socket.on("detailedResults", (data) => {
+            detailedResults = data;
+            renderPlayers(playersCache);
+            renderResults();
+        });
+
+        // Fragen laden
+        fetch("fragen.txt")
+            .then(res => res.text())
+            .then(text => {
+                document.getElementById("questions").textContent = text;
+            })
+            .catch(() => {
+                document.getElementById("questions").textContent = "Keine Fragen-Datei gefunden.";
+            });
+    </script>
+</body>
+</html>

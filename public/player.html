@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Player Voting</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .topBar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .heartDisplay {
+            font-size: 22px;
+            letter-spacing: 3px;
+        }
+
+        .playerGrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .playerCard {
+            background: #151515;
+            padding: 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .playerCard:hover {
+            background: #1f1f1f;
+            transform: translateY(-2px);
+        }
+
+        .playerCard.voted {
+            background: #2a2a2a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card" style="max-width: 500px; margin: 60px auto;">
+        <div id="top" class="topBar"></div>
+        <h1 id="title" style="text-align:center;">Wer bist du?</h1>
+        <div id="playerArea"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        let myVote = null;
+        let myName = localStorage.getItem("myName");
+        let currentPlayers = [];
+        let myHearts = 3;
+
+        socket.on("connect", () => {
+            if (myName) {
+                socket.emit("identify", myName);
+            }
+            socket.emit("requestPlayerList");
+        });
+
+        socket.on("playerList", (players) => {
+            currentPlayers = players;
+            render();
+        });
+
+        socket.on("yourVote", (player) => {
+            myVote = player;
+            render();
+        });
+
+        socket.on("resetVotes", () => {
+            myVote = null;
+            render();
+        });
+
+        socket.on("detailedResults", (data) => {
+            if (myName && data[myName]) {
+                myHearts = data[myName].hearts ?? 3;
+            }
+            render();
+        });
+
+        function renderHearts(count) {
+            let text = "";
+            for (let i = 0; i < 3; i++) {
+                text += i < count ? "♥︎ " : "♡ ";
+            }
+            return text;
+        }
+
+        function render() {
+            const area = document.getElementById("playerArea");
+            const title = document.getElementById("title");
+            const top = document.getElementById("top");
+
+            area.innerHTML = "";
+            top.innerHTML = "";
+
+            // IDENTITÄTSWAHL
+            if (!myName) {
+                title.textContent = "Wer bist du?";
+
+                const grid = document.createElement("div");
+                grid.className = "playerGrid";
+
+                currentPlayers.forEach((player) => {
+                    const card = document.createElement("div");
+                    card.className = "playerCard";
+                    card.textContent = "/" + player;
+
+                    card.onclick = () => {
+                        myName = player;
+                        localStorage.setItem("myName", player);
+                        socket.emit("identify", player);
+                        render();
+                    };
+
+                    grid.appendChild(card);
+                });
+
+                area.appendChild(grid);
+                return;
+            }
+
+            // TOP BAR
+            title.textContent = "Wähle einen Spieler";
+
+            const nameBox = document.createElement("div");
+            nameBox.textContent = "Du bist: /" + myName;
+
+            const hearts = document.createElement("div");
+            hearts.className = "heartDisplay";
+            hearts.textContent = renderHearts(myHearts);
+
+            top.appendChild(nameBox);
+            top.appendChild(hearts);
+
+            // VOTING GRID
+            const grid = document.createElement("div");
+            grid.className = "playerGrid";
+
+            currentPlayers.forEach((player) => {
+                const card = document.createElement("div");
+                card.className = "playerCard";
+
+                if (myVote === player) {
+                    card.classList.add("voted");
+                    card.textContent = "Dein Vote:\n/" + player;
+                } else {
+                    card.textContent = "/" + player;
+                }
+
+                // IMMER klickbar (Vote kann geändert werden)
+                card.onclick = () => {
+                    socket.emit("vote", player);
+                };
+
+                grid.appendChild(card);
+            });
+
+            area.appendChild(grid);
+        }
+    </script>
+</body>
+</html>

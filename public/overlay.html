@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Overlay</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {
+    background: transparent;
+}
+
+.player {
+    margin: 12px;
+}
+
+.topRow {
+    background: rgba(0,0,0,0.6);
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+}
+
+
+.bottomRow {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.box {
+    background: rgba(0,0,0,0.6);
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+
+.reveal {
+    animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<div id="overlay"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+let players = {};
+let revealedVotes = {};
+let animated = {};
+
+socket.on("detailedResults", (data) => {
+    players = data;
+    render();
+});
+
+socket.on("revealAllVotes", (data) => {
+    players = data;
+    Object.keys(players).forEach(name => {
+        revealedVotes[name] = true;
+    });
+    render();
+});
+
+socket.on("revealSingleVote", ({ name }) => {
+    revealedVotes[name] = true;
+    animated[name] = true;
+    render();
+});
+
+socket.on("hideVotes", () => {
+    revealedVotes = {};
+    animated = {};
+    render();
+});
+
+function hearts(count) {
+    let h = "";
+    for (let i = 0; i < 3; i++) {
+        h += i < count ? "♥︎ " : "♡ ";
+    }
+    return h;
+}
+
+function render() {
+    const container = document.getElementById("overlay");
+    container.innerHTML = "";
+
+    Object.keys(players).forEach((name) => {
+        const p = players[name];
+        const isRevealed = revealedVotes[name];
+
+        const div = document.createElement("div");
+        div.className = "player";
+
+        let bottom = "";
+
+        if (isRevealed) {
+            const animClass = animated[name] ? "reveal" : "";
+
+            bottom = `
+                <div class="bottomRow ${animClass}">
+                    <div class="box">/${p.votedFor || "-"}</div>
+                    <div class="box">${p.votes} Votes</div>
+                </div>
+            `;
+
+            animated[name] = false;
+        }
+
+        div.innerHTML = `
+            <div class="topRow">
+                <div>/${name}</div>
+                <div>${hearts(p.hearts)}</div>
+            </div>
+            ${bottom}
+        `;
+
+        container.appendChild(div);
+    });
+}
+</script>
+</body>
+</html>
