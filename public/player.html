@@ -61,6 +61,14 @@
         let currentPlayers = [];
         let myHearts = 3;
 
+        // Wenn Spielername schon gespeichert ist → beim Server anmelden
+        socket.on("connect", () => {
+            if (myName) {
+                socket.emit("identify", myName);
+            }
+        });
+
+
         socket.on("connect", () => {
             if (myName) {
                 socket.emit("identify", myName);
