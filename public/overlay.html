@@ -1,133 +1,117 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Overlay</title>
-<link rel="stylesheet" href="style.css">
-<style>
-body {
-    background: transparent;
-}
+  <meta charset="UTF-8" />
+  <title>Voting Overlay</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: transparent;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
 
-.player {
-    margin: 12px;
-}
+    #container {
+      padding: 10px;
+    }
 
-.topRow {
-    background: rgba(0,0,0,0.6);
-    padding: 6px 12px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    width: fit-content;
-}
+    .player-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: inline-block;
+      min-width: 180px;
+    }
 
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
 
-.bottomRow {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-}
+    .name {
+      font-weight: bold;
+      font-size: 18px;
+    }
 
-.box {
-    background: rgba(0,0,0,0.6);
-    padding: 4px 10px;
-    border-radius: 8px;
-}
+    .hearts {
+      font-size: 18px;
+    }
 
-.reveal {
-    animation: pop 0.3s ease;
-}
+    .bottom-row {
+      margin-top: 6px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
 
-@keyframes pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-</style>
+    .info-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 10px;
+      padding: 4px 8px;
+      display: inline-block;
+      margin-right: 6px;
+    }
+  </style>
 </head>
 <body>
+  <div id="container"></div>
 
-<div id="overlay"></div>
+  <script>
+    const socket = io();
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
+    const params = new URLSearchParams(window.location.search);
+    const targetPlayer = params.get("player");
 
-let players = {};
-let revealedVotes = {};
-let animated = {};
+    let players = [];
+    let showVotes = false;
 
-socket.on("detailedResults", (data) => {
-    players = data;
-    render();
-});
-
-socket.on("revealAllVotes", (data) => {
-    players = data;
-    Object.keys(players).forEach(name => {
-        revealedVotes[name] = true;
+    socket.on("playerList", (data) => {
+      players = data;
+      render();
     });
-    render();
-});
 
-socket.on("revealSingleVote", ({ name }) => {
-    revealedVotes[name] = true;
-    animated[name] = true;
-    render();
-});
+    socket.on("showVotes", (value) => {
+      showVotes = value;
+      render();
+    });
 
-socket.on("hideVotes", () => {
-    revealedVotes = {};
-    animated = {};
-    render();
-});
+    function render() {
+      const container = document.getElementById("container");
+      container.innerHTML = "";
 
-function hearts(count) {
-    let h = "";
-    for (let i = 0; i < 3; i++) {
-        h += i < count ? "♥︎ " : "♡ ";
-    }
-    return h;
-}
+      if (!targetPlayer) return;
 
-function render() {
-    const container = document.getElementById("overlay");
-    container.innerHTML = "";
+      const player = players.find(p => p.name === targetPlayer);
+      if (!player) return;
 
-    Object.keys(players).forEach((name) => {
-        const p = players[name];
-        const isRevealed = revealedVotes[name];
+      const hearts =
+        "♥".repeat(player.hearts) +
+        "♡".repeat(3 - player.hearts);
 
-        const div = document.createElement("div");
-        div.className = "player";
+      const votedFor = player.votedFor || "-";
 
-        let bottom = "";
+      const box = document.createElement("div");
+      box.className = "player-box";
 
-        if (isRevealed) {
-            const animClass = animated[name] ? "reveal" : "";
-
-            bottom = `
-                <div class="bottomRow ${animClass}">
-                    <div class="box">/${p.votedFor || "-"}</div>
-                    <div class="box">${p.votes} Votes</div>
-                </div>
-            `;
-
-            animated[name] = false;
+      box.innerHTML = `
+        <div class="top-row">
+          <div class="name">${player.name}</div>
+          <div class="hearts">${hearts}</div>
+        </div>
+        ${
+          showVotes
+            ? `<div class="bottom-row">
+                 <span class="info-box">${votedFor}</span>
+                 <span class="info-box">${player.votes} Votes</span>
+               </div>`
+            : ""
         }
+      `;
 
-        div.innerHTML = `
-            <div class="topRow">
-                <div>/${name}</div>
-                <div>${hearts(p.hearts)}</div>
-            </div>
-            ${bottom}
-        `;
-
-        container.appendChild(div);
-    });
-}
-</script>
+      container.appendChild(box);
+    }
+  </script>
 </body>
 </html>
