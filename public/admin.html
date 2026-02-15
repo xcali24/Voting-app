@@ -96,24 +96,6 @@
             const list = document.getElementById("playerList");
             list.innerHTML = "";
 
-            const startBtn = document.getElementById("startVoting");
-const stopBtn = document.getElementById("stopVoting");
-const revealAllBtn = document.getElementById("revealAll");
-const revealNextBtn = document.getElementById("revealNext");
-const hideBtn = document.getElementById("hideVotes");
-
-function setActive(button) {
-    document.querySelectorAll(".admin-btn").forEach(b => {
-        b.classList.remove("active");
-    });
-    button.classList.add("active");
-}
-
-startBtn.onclick = () => {
-    socket.emit("startVoting");
-    setActive(startBtn);
-};
-
 stopBtn.onclick = () => {
     socket.emit("stopVoting");
     setActive(stopBtn);
@@ -199,6 +181,43 @@ hideBtn.onclick = () => {
                 box.appendChild(row);
             });
         }
+        const startBtn = document.getElementById("startVoting");
+const stopBtn = document.getElementById("stopVoting");
+const revealAllBtn = document.getElementById("revealAll");
+const revealNextBtn = document.getElementById("revealNext");
+const hideBtn = document.getElementById("hideVotes");
+
+function setActive(button) {
+    document.querySelectorAll(".admin-btn").forEach(b => {
+        b.classList.remove("active");
+    });
+    button.classList.add("active");
+}
+
+startBtn.onclick = () => {
+    socket.emit("startVoting");
+    setActive(startBtn);
+};
+
+stopBtn.onclick = () => {
+    socket.emit("stopVoting");
+    setActive(stopBtn);
+};
+
+revealAllBtn.onclick = () => {
+    socket.emit("revealVotes");
+    setActive(revealAllBtn);
+};
+
+revealNextBtn.onclick = () => {
+    socket.emit("revealNextVote");
+    setActive(revealNextBtn);
+};
+
+hideBtn.onclick = () => {
+    socket.emit("hideVotes");
+    setActive(hideBtn);
+};
 
         socket.on("playerList", (players) => {
             playersCache = players;
