@@ -45,11 +45,19 @@ io.on("connection", (socket) => {
         socket.playerName = name;
     });
 
-    socket.on("vote", (target) => {
-    if (!votingOpen) return;
+   socket.on("vote", (target) => {
+    console.log("Vote erhalten:", socket.playerName, "->", target);
+
+    if (!votingOpen) {
+        console.log("Vote blockiert: Voting nicht offen");
+        return;
+    }
 
     const voter = socket.playerName;
-    if (!voter || !players[voter]) return;
+    if (!voter || !players[voter]) {
+        console.log("Vote blockiert: Spieler nicht erkannt");
+        return;
+    }
 
     const oldTarget = players[voter].votedFor;
 
@@ -64,8 +72,11 @@ io.on("connection", (socket) => {
 
     socket.emit("yourVote", target);
 
+    console.log("Vote gespeichert:", voter, "->", target);
+
     sendDetailedResults();
 });
+
 
 
    socket.on("startVoting", () => {
