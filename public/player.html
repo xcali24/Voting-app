@@ -61,29 +61,42 @@
         let currentPlayers = [];
         let myHearts = 3;
 
-        // EINZIGER connect-Handler (Fix)
+        // Socket-Verbindung aufgebaut
         socket.on("connect", () => {
+            console.log("✅ Socket verbunden");
+            
+            // Wenn wir bereits einen Namen haben, identifizieren
             if (myName) {
+                console.log("📤 Sende identify:", myName);
                 socket.emit("identify", myName);
             }
+            
+            // Spielerliste anfordern
             socket.emit("requestPlayerList");
         });
 
+        // Spielerliste empfangen
         socket.on("playerList", (players) => {
+            console.log("📥 Spielerliste empfangen:", players);
             currentPlayers = players;
             render();
         });
 
+        // Eigenen Vote empfangen
         socket.on("yourVote", (player) => {
+            console.log("📥 Dein Vote wurde gespeichert:", player);
             myVote = player;
             render();
         });
 
+        // Votes wurden zurückgesetzt
         socket.on("resetVotes", () => {
+            console.log("🔄 Votes zurückgesetzt");
             myVote = null;
             render();
         });
 
+        // Detaillierte Ergebnisse (inkl. Herzen)
         socket.on("detailedResults", (data) => {
             if (myName && data[myName]) {
                 myHearts = data[myName].hearts ?? 3;
@@ -91,14 +104,16 @@
             render();
         });
 
+        // Herzen darstellen
         function renderHearts(count) {
             let text = "";
             for (let i = 0; i < 3; i++) {
-                text += i < count ? "♥︎ " : "♡ ";
+                text += i < count ? "♥️ " : "♡ ";
             }
             return text;
         }
 
+        // Hauptrender-Funktion
         function render() {
             const area = document.getElementById("playerArea");
             const title = document.getElementById("title");
@@ -122,6 +137,7 @@
                     card.onclick = () => {
                         myName = player;
                         localStorage.setItem("myName", player);
+                        console.log("🎭 Identität gewählt:", player);
                         socket.emit("identify", player);
                         render();
                     };
@@ -161,8 +177,9 @@
                     card.textContent = "/" + player;
                 }
 
-                // IMMER klickbar (Vote kann geändert werden)
+                // Vote senden beim Klick
                 card.onclick = () => {
+                    console.log("🗳️ Vote gesendet:", player);
                     socket.emit("vote", player);
                 };
 
