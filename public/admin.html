@@ -23,6 +23,13 @@
                 <ul id="playerList"></ul>
             </div>
 
+            <!-- NEU: Overlay-URLs Box -->
+            <div class="card">
+                <h2>Overlay-URLs für OBS</h2>
+                <button onclick="copyAllURLs()" style="margin-bottom: 15px; width: 100%;">📋 Alle URLs kopieren</button>
+                <div id="urlList"></div>
+            </div>
+
             <div class="card">
                 <h2>Voting-Steuerung</h2>
                 <button id="startVoting" class="admin-btn">Voting starten</button>
@@ -138,6 +145,111 @@
             });
         }
 
+        // ==================== URL-LISTE RENDERN ====================
+
+        function renderURLList() {
+            const baseURL = window.location.origin; // z.B. https://meine-app.onrender.com
+            const urlBox = document.getElementById("urlList");
+            urlBox.innerHTML = "";
+
+            if (playersCache.length === 0) {
+                urlBox.innerHTML = "<p style='color: #888; font-size: 14px;'>Keine Spieler hinzugefügt</p>";
+                return;
+            }
+
+            playersCache.forEach((player) => {
+                const url = `${baseURL}/overlay.html?player=${player}`;
+
+                const row = document.createElement("div");
+                row.style.marginBottom = "10px";
+                row.style.padding = "10px";
+                row.style.background = "#111";
+                row.style.borderRadius = "8px";
+
+                const playerName = document.createElement("div");
+                playerName.textContent = `/${player}`;
+                playerName.style.fontWeight = "bold";
+                playerName.style.marginBottom = "5px";
+
+                const urlText = document.createElement("input");
+                urlText.value = url;
+                urlText.readOnly = true;
+                urlText.style.width = "100%";
+                urlText.style.padding = "6px";
+                urlText.style.fontSize = "12px";
+                urlText.style.background = "#0a0a0a";
+                urlText.style.border = "1px solid #333";
+                urlText.style.borderRadius = "4px";
+                urlText.style.color = "#aaa";
+                urlText.style.marginBottom = "5px";
+
+                const copyBtn = document.createElement("button");
+                copyBtn.textContent = "📋 Kopieren";
+                copyBtn.style.width = "100%";
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(url).then(() => {
+                        copyBtn.textContent = "✅ Kopiert!";
+                        setTimeout(() => {
+                            copyBtn.textContent = "📋 Kopieren";
+                        }, 2000);
+                    });
+                };
+
+                row.appendChild(playerName);
+                row.appendChild(urlText);
+                row.appendChild(copyBtn);
+
+                urlBox.appendChild(row);
+            });
+        }
+
+        function copyAllURLs() {
+            const baseURL = window.location.origin;
+            let allURLs = "";
+
+            playersCache.forEach((player) => {
+                allURLs += `${player}: ${baseURL}/overlay.html?player=${player}\n`;
+            });
+
+            if (allURLs === "") {
+                alert("Keine Spieler hinzugefügt!");
+                return;
+            }
+
+            navigator.clipboard.writeText(allURLs).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = "✅ Alle kopiert!";
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function renderResults() {
+            const box = document.getElementById("resultBox");
+            box.innerHTML = "";
+
+            playersCache.forEach((player) => {
+                const data = detailedResults[player];
+                if (!data) return;
+
+                const row = document.createElement("div");
+                row.style.display = "flex";
+                row.style.justifyContent = "space-between";
+                row.style.padding = "6px 0";
+                row.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+
+                row.innerHTML = `
+                    <span>/${player}</span>
+                    <span>→ /${data.votedFor || "-"}</span>
+                    <span>| ${data.votes || 0} Votes</span>
+                `;
+
+                box.appendChild(row);
+            });
+        }
+
         function setActive(button) {
             document.querySelectorAll(".admin-btn").forEach(b => {
                 b.classList.remove("active");
@@ -183,6 +295,7 @@
         socket.on("playerList", (players) => {
             playersCache = players;
             renderPlayers(players);
+            renderURLList(); // NEU: URL-Liste aktualisieren
         });
 
         socket.on("detailedResults", (data) => {
