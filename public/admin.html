@@ -23,13 +23,6 @@
                 <ul id="playerList"></ul>
             </div>
 
-            <!-- NEU: Overlay-URLs Box -->
-            <div class="card">
-                <h2>Overlay-URLs für OBS</h2>
-                <button onclick="copyAllURLs()" style="margin-bottom: 15px; width: 100%;">📋 Alle URLs kopieren</button>
-                <div id="urlList"></div>
-            </div>
-
             <div class="card">
                 <h2>Voting-Steuerung</h2>
                 <button id="startVoting" class="admin-btn">Voting starten</button>
@@ -37,6 +30,13 @@
                 <button id="revealAll" class="admin-btn">Alle Votes aufdecken</button>
                 <button id="revealNext" class="admin-btn">Nächsten Vote aufdecken</button>
                 <button id="hideVotes" class="admin-btn">Votes verbergen</button>
+            </div>
+
+            <!-- Overlay-URLs Box (verschoben nach unten) -->
+            <div class="card">
+                <h2>Overlay-URLs für OBS</h2>
+                <button onclick="copyAllURLs()" style="margin-bottom: 15px; width: 100%;">📋 Alle URLs kopieren</button>
+                <div id="urlList"></div>
             </div>
 
         </div>

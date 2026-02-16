@@ -61,6 +61,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const targetPlayer = urlParams.get('player'); // z.B. "LunaPeruna"
 
 console.log("🎬 Overlay geladen für:", targetPlayer || "ALLE Spieler");
+console.log("📍 Komplette URL:", window.location.href);
 
 let players = {};
 let revealedVotes = {};
@@ -68,6 +69,14 @@ let animated = {};
 
 socket.on("detailedResults", (data) => {
     players = data;
+    console.log("📥 Spielerdaten empfangen:", Object.keys(players));
+    console.log("🔍 Suche nach Spieler:", targetPlayer);
+    
+    if (targetPlayer && !players[targetPlayer]) {
+        console.warn("⚠️ WARNUNG: Spieler '" + targetPlayer + "' nicht in der Liste gefunden!");
+        console.log("📋 Verfügbare Spieler:", Object.keys(players));
+    }
+    
     render();
 });
 
@@ -103,13 +112,23 @@ function render() {
     const container = document.getElementById("overlay");
     container.innerHTML = "";
 
+    console.log("🎨 Rendering gestartet...");
+    console.log("👥 Anzahl Spieler:", Object.keys(players).length);
+    console.log("🎯 Filter aktiv für:", targetPlayer || "keinen (alle anzeigen)");
+
+    let renderedCount = 0;
+
     Object.keys(players).forEach((name) => {
         // ============================================
         // NEU: Filter - nur targetPlayer anzeigen
         // ============================================
         if (targetPlayer && name !== targetPlayer) {
+            console.log("⏭️ Überspringe:", name);
             return; // Diesen Spieler überspringen
         }
+
+        console.log("✅ Rendere:", name);
+        renderedCount++;
 
         const p = players[name];
         const isRevealed = revealedVotes[name];
@@ -142,6 +161,13 @@ function render() {
 
         container.appendChild(div);
     });
+
+    console.log("✨ Rendering abgeschlossen. Angezeigte Spieler:", renderedCount);
+    
+    if (renderedCount === 0) {
+        console.error("❌ FEHLER: Kein Spieler wurde gerendert!");
+        container.innerHTML = "<div style='color: red; padding: 20px;'>❌ Kein Spieler gefunden!</div>";
+    }
 }
 </script>
 </body>
