@@ -54,6 +54,14 @@ body {
 <script>
 const socket = io();
 
+// ============================================
+// NEU: URL-Parameter auslesen
+// ============================================
+const urlParams = new URLSearchParams(window.location.search);
+const targetPlayer = urlParams.get('player'); // z.B. "LunaPeruna"
+
+console.log("🎬 Overlay geladen für:", targetPlayer || "ALLE Spieler");
+
 let players = {};
 let revealedVotes = {};
 let animated = {};
@@ -96,6 +104,13 @@ function render() {
     container.innerHTML = "";
 
     Object.keys(players).forEach((name) => {
+        // ============================================
+        // NEU: Filter - nur targetPlayer anzeigen
+        // ============================================
+        if (targetPlayer && name !== targetPlayer) {
+            return; // Diesen Spieler überspringen
+        }
+
         const p = players[name];
         const isRevealed = revealedVotes[name];
 
