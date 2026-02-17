@@ -46,9 +46,8 @@
 
             <div class="card">
                 <h2>Fragen</h2>
-                <div id="questions" class="questionBox">
-                    Lade Fragen...
-                </div>
+                <button onclick="resetAllFragen()" style="margin-bottom: 12px; width: 100%;">🔄 Alles zurücksetzen</button>
+                <div id="questions" class="questionBox"></div>
             </div>
 
             <div class="card">
@@ -226,30 +225,6 @@
             });
         }
 
-        function renderResults() {
-            const box = document.getElementById("resultBox");
-            box.innerHTML = "";
-
-            playersCache.forEach((player) => {
-                const data = detailedResults[player];
-                if (!data) return;
-
-                const row = document.createElement("div");
-                row.style.display = "flex";
-                row.style.justifyContent = "space-between";
-                row.style.padding = "6px 0";
-                row.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
-
-                row.innerHTML = `
-                    <span>/${player}</span>
-                    <span>→ /${data.votedFor || "-"}</span>
-                    <span>| ${data.votes || 0} Votes</span>
-                `;
-
-                box.appendChild(row);
-            });
-        }
-
         function setActive(button) {
             document.querySelectorAll(".admin-btn").forEach(b => {
                 b.classList.remove("active");
@@ -304,12 +279,126 @@
             renderResults();
         });
 
-        // Fragen laden
+        // ==================== FRAGEN SYSTEM ====================
+
+        // Speichert den Status jeder Frage: { checked: bool, answer: null | 'R' | 'F' }
+        let fragenStatus = {};
+
+        function renderFragen(text) {
+            const container = document.getElementById("questions");
+            container.innerHTML = "";
+
+            const zeilen = text.split("\n").filter(z => z.trim() !== "");
+
+            zeilen.forEach((zeile, index) => {
+                // Status aus dem gespeicherten Objekt holen (oder Default)
+                if (!fragenStatus[index]) {
+                    fragenStatus[index] = { checked: false, answer: null };
+                }
+
+                const status = fragenStatus[index];
+
+                const row = document.createElement("div");
+                row.style.display = "flex";
+                row.style.alignItems = "center";
+                row.style.gap = "10px";
+                row.style.padding = "8px 6px";
+                row.style.borderRadius = "8px";
+                row.style.marginBottom = "4px";
+                row.style.transition = "background 0.2s";
+
+                // Hintergrundfarbe je nach Status
+                if (status.checked) {
+                    row.style.background = "rgba(255, 255, 255, 0.05)";
+                }
+                if (status.answer === 'R') {
+                    row.style.background = "rgba(0, 200, 100, 0.15)";
+                } else if (status.answer === 'F') {
+                    row.style.background = "rgba(220, 50, 50, 0.15)";
+                }
+
+                // ---- CHECKBOX ----
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = status.checked;
+                checkbox.style.width = "16px";
+                checkbox.style.height = "16px";
+                checkbox.style.cursor = "pointer";
+                checkbox.style.flexShrink = "0";
+                checkbox.onchange = () => {
+                    fragenStatus[index].checked = checkbox.checked;
+                    renderFragen(zeilen.join("\n"));
+                };
+
+                // ---- FRAGETEXT ----
+                const text_el = document.createElement("span");
+                text_el.textContent = zeile;
+                text_el.style.flex = "1";
+                text_el.style.fontSize = "14px";
+                text_el.style.lineHeight = "1.4";
+                if (status.answer === 'R') {
+                    text_el.style.color = "#4dff91";
+                } else if (status.answer === 'F') {
+                    text_el.style.color = "#ff6b6b";
+                }
+
+                // ---- R BUTTON ----
+                const rBtn = document.createElement("button");
+                rBtn.textContent = "R";
+                rBtn.style.padding = "4px 10px";
+                rBtn.style.borderRadius = "6px";
+                rBtn.style.border = "none";
+                rBtn.style.cursor = "pointer";
+                rBtn.style.flexShrink = "0";
+                rBtn.style.fontWeight = "bold";
+                rBtn.style.background = status.answer === 'R' ? "#00c864" : "#1a1a1a";
+                rBtn.style.color = status.answer === 'R' ? "#000" : "#fff";
+                rBtn.style.transition = "0.2s";
+                rBtn.onclick = () => {
+                    // Toggle: nochmal klicken = zurücksetzen
+                    fragenStatus[index].answer = status.answer === 'R' ? null : 'R';
+                    renderFragen(zeilen.join("\n"));
+                };
+
+                // ---- F BUTTON ----
+                const fBtn = document.createElement("button");
+                fBtn.textContent = "F";
+                fBtn.style.padding = "4px 10px";
+                fBtn.style.borderRadius = "6px";
+                fBtn.style.border = "none";
+                fBtn.style.cursor = "pointer";
+                fBtn.style.flexShrink = "0";
+                fBtn.style.fontWeight = "bold";
+                fBtn.style.background = status.answer === 'F' ? "#dc3232" : "#1a1a1a";
+                fBtn.style.color = "#fff";
+                fBtn.style.transition = "0.2s";
+                fBtn.onclick = () => {
+                    // Toggle: nochmal klicken = zurücksetzen
+                    fragenStatus[index].answer = status.answer === 'F' ? null : 'F';
+                    renderFragen(zeilen.join("\n"));
+                };
+
+                row.appendChild(checkbox);
+                row.appendChild(text_el);
+                row.appendChild(rBtn);
+                row.appendChild(fBtn);
+                container.appendChild(row);
+            });
+        }
+
+        function resetAllFragen() {
+            fragenStatus = {};
+            // Fragen neu laden und rendern
+            fetch("fragen.txt")
+                .then(res => res.text())
+                .then(text => renderFragen(text))
+                .catch(() => {});
+        }
+
+        // Fragen beim Start laden
         fetch("fragen.txt")
             .then(res => res.text())
-            .then(text => {
-                document.getElementById("questions").textContent = text;
-            })
+            .then(text => renderFragen(text))
             .catch(() => {
                 document.getElementById("questions").textContent = "Keine Fragen-Datei gefunden.";
             });
